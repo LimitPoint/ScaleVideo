@@ -18,9 +18,17 @@ The project is comprised of:
 
 ### ScaleVideoApp
 
-Videos to scale are imported from Files using [fileImporter] and exported to Files using [fileExporter]
+Videos to scale are imported from Files using [fileImporter] and exported to Files using [fileExporter]. 
+
+The scaling is monitored with a [ProgressView].
+
+The video and scaled video can be played with a [VideoPlayer].
 
 ### ScaleVideoObservable
+
+Creates the `ScaleAudio` object to perform the scaling operation and send progress back to the app.
+
+The `URL` of the video to scale is received from the file import operation and, if needed, downloaded with [startDownloadingUbiquitousItem] or security accessed with [startAccessingSecurityScopedResource].
 
 To facilitate exporting using `fileExporter` a [FileDocument] named `VideoDocument` is prepared with a [FileWrapper] created from the [URL] of the scaled video.
 
@@ -76,3 +84,7 @@ func testScaleVideo() {
 [FileDocument]: https://developer.apple.com/documentation/swiftui/filedocument
 [FileWrapper]: https://developer.apple.com/documentation/foundation/filewrapper
 [URL]: https://developer.apple.com/documentation/foundation/url
+[VideoPlayer]: https://developer.apple.com/documentation/avkit/videoplayer
+[ProgressView]: https://developer.apple.com/documentation/swiftui/progressview
+[startDownloadingUbiquitousItem]: https://developer.apple.com/documentation/foundation/filemanager/1410377-startdownloadingubiquitousitem
+[startAccessingSecurityScopedResource]: https://developer.apple.com/documentation/foundation/nsurl/1417051-startaccessingsecurityscopedreso
