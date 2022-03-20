@@ -455,6 +455,15 @@ class ScaleVideo {
         self.writeAudioOnQueue(self.audioQueue)
     }
     
+    func completed() {
+        if self.isCancelled {
+            completionAction(nil, "Cancelled")
+        }
+        else {
+            self.completionAction(self.generatedMovieURL, nil)
+        }
+    }
+    
     func failed() {
         
         var errorMessage:String?
@@ -479,7 +488,7 @@ class ScaleVideo {
                 case .failed:
                     self.failed()
                 case .completed:
-                    self.completionAction(self.generatedMovieURL, nil)
+                    self.completed()
                 default:
                     self.failed()
             }
