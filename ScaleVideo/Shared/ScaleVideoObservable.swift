@@ -159,19 +159,23 @@ class ScaleVideoObservable:ObservableObject {
         }
     }
     
-    func playOriginal() {
-        self.player = AVPlayer(url: videoURL)
+    func play(_ url:URL) {
+        self.player.pause()
+        self.player = AVPlayer(url: url)
         self.player.play()
     }
     
+    func playOriginal() {
+        play(videoURL)
+    }
+    
     func playScaled() {
-        self.player = AVPlayer(url: scaledVideoURL)
-        self.player.play()
+        play(scaledVideoURL)
     }
     
     func scale() {
         
-        print("factor = \(factor), fps = \(fps)")
+        self.player.pause()
         
         isScaling = true
         
