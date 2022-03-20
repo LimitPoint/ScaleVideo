@@ -314,7 +314,7 @@ class ScaleVideo {
         }
     }
     
-    func frameCountAndTimeScaleFactorForResampling(videoAsset:AVAsset) {
+    func frameCountAndTimeScaleFactorForResampling(videoAsset:AVAsset) -> Bool {
         
         let group = DispatchGroup()
         
@@ -371,20 +371,23 @@ class ScaleVideo {
         
         group.wait()
         
-        self.frameCount = localFrameCount
-        self.timeScaleFactor = self.desiredDuration / CMTimeGetSeconds(lastPresentationTime)
+        if lastPresentationTime.isValid, localFrameCount > 0, self.isCancelled == false {
+            self.frameCount = localFrameCount
+            self.timeScaleFactor = self.desiredDuration / CMTimeGetSeconds(lastPresentationTime)
+            return true
+        }
+        
+        return false
     }
     
     func prepareForReading(completion: @escaping (Bool) -> ()) {
         
         var success = false
         
-        guard let videoAsset = self.videoAsset else {
+        guard let videoAsset = self.videoAsset, self.frameCountAndTimeScaleFactorForResampling(videoAsset: videoAsset) else {
             completion(false)
             return
         }
-        
-        self.frameCountAndTimeScaleFactorForResampling(videoAsset: videoAsset) 
         
             // Video Reader
         let (_, videoReader, videoReaderOutput) = videoAsset.videoReader(outputSettings: kVideoReaderSettings)
