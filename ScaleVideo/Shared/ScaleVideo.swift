@@ -138,7 +138,7 @@ func testScaleVideo() {
     let docsurl = try! fm.url(for:.documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
     
     let destinationPath = docsurl.appendingPathComponent("DefaultVideoScaled.mov").path
-    let scaleVideo = ScaleVideo(path: kDefaultURL.path, desiredDuration: 8, frameRate: 30, destination: destinationPath) { p, _ in
+    let scaleVideo = ScaleVideo(path: kDefaultURL.path, desiredDuration: 8, frameRate: 30, expedited: false, destination: destinationPath) { p, _ in
         print("p = \(p)")
     } completion: { result, error in
         print("result = \(String(describing: result))")
@@ -171,9 +171,7 @@ class ScaleVideo {
     
     var writingVideoFinished = false
     var writingAudioFinished = false
-    
-    var hasAudio = false
-    
+        
     var generatedMovieURL: URL
     
     var progressAction: ((CGFloat, CIImage?) -> Void) = { progress,_ in print("progress = \(progress)")}
@@ -184,6 +182,7 @@ class ScaleVideo {
         // video scaling
     var desiredDuration:Float64 = 0
     var timeScaleFactor:Float64 = 0
+    var expedited:Bool = false
     
         // audio scaling
     var outputBufferSize:Int = 0
@@ -204,7 +203,7 @@ class ScaleVideo {
     let audioQueue: DispatchQueue = DispatchQueue(label: "com.limit-point.time-scale-audio-generator-queue")
 
         // MARK: Init and Start    
-    init?(path : String, desiredDuration: Float64, frameRate: Int32, destination: String, progress: @escaping (CGFloat, CIImage?) -> Void, completion: @escaping (URL?, String?) -> Void) {
+    init?(path : String, desiredDuration: Float64, frameRate: Int32, expedited:Bool, destination: String, progress: @escaping (CGFloat, CIImage?) -> Void, completion: @escaping (URL?, String?) -> Void) {
         
         guard frameRate > 0 else {
             return nil
@@ -230,6 +229,8 @@ class ScaleVideo {
         
         let scale:Int32 = 600
         self.frameDuration = CMTime(value: 1, timescale: CMTimeScale(frameRate)).convertScale(scale, method: CMTimeRoundingMethod.default)
+        
+        self.expedited = expedited
     }
     
     func start() {
@@ -314,8 +315,14 @@ class ScaleVideo {
         }
     }
     
-    func frameCountAndTimeScaleFactorForResampling(videoAsset:AVAsset) -> Bool {
+    func frameCountAndTimeScale(videoAsset:AVAsset, estimated:Bool = false) -> Bool {
         
+        if estimated {
+            self.frameCount = videoAsset.estimatedFrameCount()
+            self.timeScaleFactor = self.desiredDuration / CMTimeGetSeconds(videoAsset.duration)
+            return true
+        }
+       
         let group = DispatchGroup()
         
         group.enter()
@@ -384,7 +391,7 @@ class ScaleVideo {
         
         var success = false
         
-        guard let videoAsset = self.videoAsset, self.frameCountAndTimeScaleFactorForResampling(videoAsset: videoAsset) else {
+        guard let videoAsset = self.videoAsset, self.frameCountAndTimeScale(videoAsset: videoAsset, estimated: self.expedited) else {
             completion(false)
             return
         }
@@ -416,9 +423,6 @@ class ScaleVideo {
                 
                 self.audioReader = audioReader
                 self.audioReaderOutput = audioReaderOutput
-                
-                self.hasAudio = true
-                
             }
             
             success = true
