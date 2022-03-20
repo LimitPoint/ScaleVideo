@@ -20,11 +20,15 @@ The project is comprised of:
 
 Videos to scale are imported from Files using [fileImporter] and exported to Files using [fileExporter]
 
+### ScaleVideoObservable
+
+To facilitate exporting using `fileExporter` a [FileDocument] named `VideoDocument` is prepared with a [FileWrapper] created from the [URL] of the scaled video.
+
 ### ScaleVideo
 
 Scaling video is performed using [AVFoundation] and [vDSP].
 
-The ScaleVideo initializer:
+The ScaleVideo initializer `init`:
 
 ```swift
 init?(path: String, desiredDuration: Float64, frameRate: Int32, destination: String, progress: @escaping (CGFloat, CIImage?) -> Void, completion: @escaping (URL?, String?) -> Void)
@@ -69,3 +73,6 @@ func testScaleVideo() {
 [SwiftUI]: https://developer.apple.com/tutorials/swiftui
 [fileImporter]: https://developer.apple.com/documentation/swiftui/form/fileimporter(ispresented:allowedcontenttypes:allowsmultipleselection:oncompletion:)
 [fileExporter]: https://developer.apple.com/documentation/swiftui/form/fileexporter(ispresented:document:contenttype:defaultfilename:oncompletion:)-1srj
+[FileDocument]: https://developer.apple.com/documentation/swiftui/filedocument
+[FileWrapper]: https://developer.apple.com/documentation/foundation/filewrapper
+[URL]: https://developer.apple.com/documentation/foundation/url
