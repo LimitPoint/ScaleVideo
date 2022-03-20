@@ -371,8 +371,14 @@ class ScaleVideo {
         
         group.wait()
         
-        self.frameCount = localFrameCount
-        self.timeScaleFactor = self.desiredDuration / CMTimeGetSeconds(lastPresentationTime)
+        if self.isCancelled {
+            failed()
+        }
+        else {
+            self.frameCount = localFrameCount
+            self.timeScaleFactor = self.desiredDuration / CMTimeGetSeconds(lastPresentationTime)
+        }
+        
     }
     
     func prepareForReading(completion: @escaping (Bool) -> ()) {
