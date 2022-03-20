@@ -232,15 +232,19 @@ class ScaleVideoObservable:ObservableObject {
                 }
                 
             }, completion: { (resultURL, errorMessage) in
+                                
                 DispatchQueue.main.async {
                     
                     self.progress = 0
                     
-                    if let resultURL =  resultURL {
+                    if let resultURL = resultURL, self.scaleVideo?.isCancelled == false {
                         self.scaledVideoURL = resultURL
-                        self.player = AVPlayer(url: resultURL)
-                        self.player.play()
                     }
+                    else {
+                        self.scaledVideoURL = kDefaultURL
+                    }
+                    
+                    self.playScaled()
                     
                     self.isScaling = false
                 }
@@ -252,7 +256,6 @@ class ScaleVideoObservable:ObservableObject {
     
     func cancel() {
         self.scaleVideo?.isCancelled = true
-        isScaling = false
     }
     
     func prepareToExportScaledVideo() {
