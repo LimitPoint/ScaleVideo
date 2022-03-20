@@ -16,6 +16,10 @@ The project is comprised of:
 2. And an [ObservableObject] (`ScaleVideoObservable`) that manages the user interaction to scale and play video files.
 3. The [AVFoundation] and [vDSP] code (`ScaleVideo`) that reads, scales and writes video files.
 
+### ScaleVideoApp
+
+Videos to scale are imported from Files using [fileImporter] and exported to Files using [fileExporter]
+
 ### ScaleVideo
 
 Scaling video is performed using [AVFoundation] and [vDSP].
@@ -63,3 +67,5 @@ func testScaleVideo() {
 [AVFoundation]: https://developer.apple.com/documentation/avfoundation/
 [vDSP]: https://developer.apple.com/documentation/accelerate/vdsp
 [SwiftUI]: https://developer.apple.com/tutorials/swiftui
+[fileImporter]: https://developer.apple.com/documentation/swiftui/form/fileimporter(ispresented:allowedcontenttypes:allowsmultipleselection:oncompletion:)
+[fileExporter]: https://developer.apple.com/documentation/swiftui/form/fileexporter(ispresented:document:contenttype:defaultfilename:oncompletion:)-1srj
