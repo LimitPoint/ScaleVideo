@@ -98,8 +98,6 @@ class ScaleVideoObservable:ObservableObject {
     
     func copyURL(_ url: URL, completion: @escaping (URL?) -> ()) {
         
-        let scoped = url.startAccessingSecurityScopedResource()
-        
         let filename = url.lastPathComponent
         
         if let copiedURL = FileManager.documentsURL("\(filename)") {
@@ -108,9 +106,6 @@ class ScaleVideoObservable:ObservableObject {
             
             do {
                 try FileManager.default.copyItem(at: url, to: copiedURL)
-                if scoped { 
-                    url.stopAccessingSecurityScopedResource() 
-                }
                 completion(copiedURL)
             }
             catch {
@@ -119,28 +114,15 @@ class ScaleVideoObservable:ObservableObject {
                     if let downloadedURL = downloadedURL {
                         do {
                             try FileManager.default.copyItem(at: downloadedURL, to: copiedURL)
-                            if scoped { 
-                                url.stopAccessingSecurityScopedResource() 
-                            }
                             completion(copiedURL)
                         }
                         catch {
                             self.errorMesssage = error.localizedDescription
-                            print("Can't copy the URL: \(error.localizedDescription)")
-                            
-                            if scoped { 
-                                url.stopAccessingSecurityScopedResource() 
-                            }
                             completion(nil)
                         }
                     }
                     else {
                         self.errorMesssage = error.localizedDescription
-                        print("Can't copy the URL: \(error.localizedDescription)")
-                        
-                        if scoped { 
-                            url.stopAccessingSecurityScopedResource() 
-                        }
                         completion(nil)
                     }
                 }
@@ -152,7 +134,15 @@ class ScaleVideoObservable:ObservableObject {
     }
     
     func loadSelectedURL(_ url:URL, completion: @escaping (Bool) -> ()) {
+        
+        let scoped = url.startAccessingSecurityScopedResource()
+        
         copyURL(url) { copiedURL in
+            
+            if scoped { 
+                url.stopAccessingSecurityScopedResource() 
+            }
+            
             DispatchQueue.main.async {
                 if let copiedURL = copiedURL {
                     self.videoURL = copiedURL
