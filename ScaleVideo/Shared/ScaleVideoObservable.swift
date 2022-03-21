@@ -90,6 +90,10 @@ class ScaleVideoObservable:ObservableObject {
                 completion(downloadedURL)
             })
         }
+        else {
+            self.errorMesssage = "URL is not ubiquitous item"
+            completion(nil)
+        }
     }
     
     func copyURL(_ url: URL, completion: @escaping (URL?) -> ()) {
@@ -141,6 +145,9 @@ class ScaleVideoObservable:ObservableObject {
                     }
                 }
             }
+        }
+        else {
+            completion(nil)
         }
     }
     
