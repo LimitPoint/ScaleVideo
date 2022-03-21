@@ -4,7 +4,7 @@
 
 Learn more about scaling video from our [in-depth blog post](https://www.limit-point.com/blog/2022/scale-video).
 
-The associated Xcode project implements a [SwiftUI] app for macOS and iOS that can import your video files stored on your device or iCloud. 
+The associated Xcode project implements a [SwiftUI] app for macOS and iOS that can import your video files for scaling that are stored on your device or iCloud. 
 
 A default video file is provided to set the initial state of the app. 
 
