@@ -333,6 +333,7 @@ class ScaleVideo {
         
         var localFrameCount:Int = 0
         let estimatedFrameCount = videoAsset.estimatedFrameCount()
+        let estimatedTimeScaleFactor = self.desiredDuration / CMTimeGetSeconds(videoAsset.duration)
         
         DispatchQueue.global(qos: .userInteractive).asyncAfter(deadline: .now() + 0.5) {
             
@@ -381,6 +382,10 @@ class ScaleVideo {
         if lastPresentationTime.isValid, localFrameCount > 0, self.isCancelled == false {
             self.frameCount = localFrameCount
             self.timeScaleFactor = self.desiredDuration / CMTimeGetSeconds(lastPresentationTime)
+            
+            print("self.frameCount = \(self.frameCount), estimatedFrameCount = \(estimatedFrameCount)")
+            print("self.timeScaleFactor = \(self.timeScaleFactor), estimatedTimeScaleFactor = \(estimatedTimeScaleFactor)")
+            
             return true
         }
         
