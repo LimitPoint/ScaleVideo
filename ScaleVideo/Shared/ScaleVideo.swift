@@ -543,7 +543,7 @@ class ScaleVideo {
             
             presentationTimeStamp = CMTimeMultiplyByFloat64(presentationTimeStamp, multiplier: self.timeScaleFactor)
             
-            if let adjustedSampleBuffer = sampleBuffer.setTimeStamp(time: presentationTimeStamp) {
+            if let adjustedSampleBuffer = sampleBuffer.setTimeStamp(time: presentationTimeStamp, duration: self.frameDuration) {
                 self.sampleBufferPresentationTime = presentationTimeStamp
                 self.sampleBuffer = adjustedSampleBuffer
             }
@@ -570,7 +570,7 @@ class ScaleVideo {
         if let sampleBuffer = self.sampleBuffer {
             
             if let sampleBufferPresentationTime = self.sampleBufferPresentationTime, self.currentTime != sampleBufferPresentationTime {
-                if let adjustedSampleBuffer = sampleBuffer.setTimeStamp(time: self.currentTime) {
+                if let adjustedSampleBuffer = sampleBuffer.setTimeStamp(time: self.currentTime, duration: self.frameDuration) {
                     appended = self.videoWriterInput.append(adjustedSampleBuffer)
                 }
             }

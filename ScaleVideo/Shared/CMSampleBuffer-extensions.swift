@@ -23,35 +23,19 @@ extension CMSampleBuffer {
         return ciImage
     }
     
-    func setTimeStamp(time: CMTime) -> CMSampleBuffer? {
+    func setTimeStamp(time: CMTime, duration:CMTime) -> CMSampleBuffer? {
         var count: CMItemCount = 0
         
-        guard CMSampleBufferGetSampleTimingInfoArray(self, entryCount: 0, arrayToFill: nil, entriesNeededOut: &count) == noErr else {
+        guard CMSampleBufferGetSampleTimingInfoArray(self, entryCount: 0, arrayToFill: nil, entriesNeededOut: &count) == noErr, count == 1 else {
             return nil
         }
         
-        var info = [CMSampleTimingInfo](repeating: CMSampleTimingInfo(duration: CMTimeMake(value: 0, timescale: 0), presentationTimeStamp: CMTimeMake(value: 0, timescale: 0), decodeTimeStamp: CMTimeMake(value: 0, timescale: 0)), count: count)
+        let timingInfoArray = [CMSampleTimingInfo(duration: duration, presentationTimeStamp: time, decodeTimeStamp: CMTime.invalid)]
         
-        guard CMSampleBufferGetSampleTimingInfoArray(self, entryCount: count, arrayToFill: &info, entriesNeededOut: &count) == noErr else {
+        var sampleBuffer: CMSampleBuffer?
+        guard CMSampleBufferCreateCopyWithNewTiming(allocator: nil, sampleBuffer: self, sampleTimingEntryCount: count, sampleTimingArray: timingInfoArray, sampleBufferOut: &sampleBuffer) == noErr else {
             return nil
         }
-        
-        for i in 0..<count {
-            
-            if CMTIME_IS_VALID(info[i].decodeTimeStamp) {
-                info[i].decodeTimeStamp = time
-            }
-            
-            if CMTIME_IS_VALID(info[i].presentationTimeStamp) {
-                info[i].presentationTimeStamp = time
-            }
-            
-        }
-        
-        var out: CMSampleBuffer?
-        guard CMSampleBufferCreateCopyWithNewTiming(allocator: nil, sampleBuffer: self, sampleTimingEntryCount: count, sampleTimingArray: &info, sampleBufferOut: &out) == noErr else {
-            return nil
-        }
-        return out
+        return sampleBuffer
     }
 }
