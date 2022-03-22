@@ -4,7 +4,7 @@
 
 Learn more about scaling video from our [in-depth blog post](https://www.limit-point.com/blog/2022/scale-video).
 
-The associated Xcode project implements a [SwiftUI] app for macOS and iOS that can import your video files for scaling that are stored on your device or iCloud. 
+The associated Xcode project implements a [SwiftUI] app for macOS and iOS that scales video files stored on your device or iCloud. 
 
 A default video file is provided to set the initial state of the app. 
 
@@ -16,9 +16,9 @@ Select the scale factor from a slider.
 
 The project is comprised of:
 
-1. The [App] (`ScaleVideoApp`) for import, scale and export.
-2. And an [ObservableObject] (`ScaleVideoObservable`) that manages the user interaction to scale and play video files.
-3. The [AVFoundation] and [vDSP] code (`ScaleVideo`) that reads, scales and writes video files.
+1. `ScaleVideoApp` - The [App] for import, scale and export.
+2. `ScaleVideoObservable` - An [ObservableObject] that manages the user interaction to scale and play video files.
+3. `ScaleVideo` - The [AVFoundation] and [vDSP] code that reads, scales and writes video files.
 
 ### ScaleVideoApp
 
@@ -43,7 +43,7 @@ Scaling video is performed using [AVFoundation] and [vDSP].
 The ScaleVideo initializer `init`:
 
 ```swift
-init?(path : String, desiredDuration: Float64, frameRate: Int32, expedited:Bool, destination: String, progress: @escaping (CGFloat, CIImage?) -> Void, completion: @escaping (URL?, String?) -> Void)
+init?(path : String, desiredDuration: Float64, frameRate: Int32, destination: String, progress: @escaping (CGFloat, CIImage?) -> Void, completion: @escaping (URL?, String?) -> Void)
 ```
 
 Arguments:
@@ -54,13 +54,11 @@ Arguments:
 
 3. **frameRate: Int32** - The desired frame rate of the scaled video. 
 
-4. **expedited:Bool** - Option to estimate video frame count and scale factor for desired duration. 
+4. **destination: String** - The path of the scaled video file.
 
-5. **destination: String** - The path of the scaled video file.
+5. **progress** - A handler that is periodically executed to send progress images and values.
 
-6. **progress** - A handler that is periodically executed to send progress images and values.
-
-7. **completion** - A handler that is executed when the operation has completed to send a message of success or not.
+6. **completion** - A handler that is executed when the operation has completed to send a message of success or not.
 
 Example usage is provided in the code: 
 
