@@ -16,9 +16,9 @@ Select the scale factor from a slider.
 
 The project is comprised of:
 
-1. The [App] (`ScaleVideoApp`) for import, scale and export.
-2. And an [ObservableObject] (`ScaleVideoObservable`) that manages the user interaction to scale and play video files.
-3. The [AVFoundation] and [vDSP] code (`ScaleVideo`) that reads, scales and writes video files.
+1. `ScaleVideoApp` - The [App] for import, scale and export.
+2. `ScaleVideoObservable` - An [ObservableObject] that manages the user interaction to scale and play video files.
+3. `ScaleVideo` - The [AVFoundation] and [vDSP] code that reads, scales and writes video files.
 
 ### ScaleVideoApp
 
