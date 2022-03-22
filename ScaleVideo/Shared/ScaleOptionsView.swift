@@ -38,11 +38,6 @@ struct ScaleOptionsView: View {
             }
             .pickerStyle(.segmented)
             
-            Toggle(isOn: $scaleVideoObservable.expedited) {
-                Text("Expedited")
-            }
-            .padding()
-            
             Button(action: { scaleVideoObservable.scale() }, label: {
                 Label("Scale", systemImage: "timelapse")
             })

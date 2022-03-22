@@ -138,7 +138,7 @@ func testScaleVideo() {
     let docsurl = try! fm.url(for:.documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
     
     let destinationPath = docsurl.appendingPathComponent("DefaultVideoScaled.mov").path
-    let scaleVideo = ScaleVideo(path: kDefaultURL.path, desiredDuration: 8, frameRate: 30, expedited: false, destination: destinationPath) { p, _ in
+    let scaleVideo = ScaleVideo(path: kDefaultURL.path, desiredDuration: 8, frameRate: 30, destination: destinationPath) { p, _ in
         print("p = \(p)")
     } completion: { result, error in
         print("result = \(String(describing: result))")
@@ -182,7 +182,6 @@ class ScaleVideo {
         // video scaling
     var desiredDuration:Float64 = 0
     var timeScaleFactor:Float64 = 0
-    var expedited:Bool = false
     
         // audio scaling
     var outputBufferSize:Int = 0
@@ -203,7 +202,7 @@ class ScaleVideo {
     let audioQueue: DispatchQueue = DispatchQueue(label: "com.limit-point.time-scale-audio-generator-queue")
 
         // MARK: Init and Start    
-    init?(path : String, desiredDuration: Float64, frameRate: Int32, expedited:Bool, destination: String, progress: @escaping (CGFloat, CIImage?) -> Void, completion: @escaping (URL?, String?) -> Void) {
+    init?(path : String, desiredDuration: Float64, frameRate: Int32, destination: String, progress: @escaping (CGFloat, CIImage?) -> Void, completion: @escaping (URL?, String?) -> Void) {
         
         guard frameRate > 0 else {
             return nil
@@ -229,8 +228,6 @@ class ScaleVideo {
         
         let scale:Int32 = 600
         self.frameDuration = CMTime(value: 1, timescale: CMTimeScale(frameRate)).convertScale(scale, method: CMTimeRoundingMethod.default)
-        
-        self.expedited = expedited
     }
     
     func start() {
@@ -314,92 +311,18 @@ class ScaleVideo {
             }
         }
     }
-    
-    func frameCountAndTimeScale(videoAsset:AVAsset, estimated:Bool = false) -> Bool {
         
-        if estimated {
-            self.frameCount = videoAsset.estimatedFrameCount()
-            self.timeScaleFactor = self.desiredDuration / CMTimeGetSeconds(videoAsset.duration)
-            return true
-        }
-       
-        let group = DispatchGroup()
-        
-        group.enter()
-        
-        var lastPercent:CGFloat = 0
-        
-        var lastPresentationTime = CMTime.invalid
-        
-        var localFrameCount:Int = 0
-        let estimatedFrameCount = videoAsset.estimatedFrameCount()
-        let estimatedTimeScaleFactor = self.desiredDuration / CMTimeGetSeconds(videoAsset.duration)
-        
-        DispatchQueue.global(qos: .userInteractive).asyncAfter(deadline: .now() + 0.5) {
-            
-            if let videoTrack = videoAsset.tracks(withMediaType: .video).first {
-                
-                if let videoReader = try? AVAssetReader(asset: videoAsset)  {
-                    
-                    let videoReaderOutput = AVAssetReaderTrackOutput(track: videoTrack, outputSettings: kVideoReaderSettings)
-                    videoReader.add(videoReaderOutput)
-                    
-                    videoReader.startReading()
-                    
-                    while true, self.isCancelled == false {
-                        
-                        let sampleBuffer = videoReaderOutput.copyNextSampleBuffer()
-                        if sampleBuffer == nil {
-                            break
-                        }
-                        else {
-                            let presentationTime = CMSampleBufferGetPresentationTimeStamp(sampleBuffer!)
-                            
-                            if presentationTime.isValid {
-                                lastPresentationTime = presentationTime
-                            }
-                        }
-                        localFrameCount += 1
-                        
-                        let percent:CGFloat = min(CGFloat(localFrameCount)/CGFloat(estimatedFrameCount), 1.0)
-                        self.cumulativeProgress += ((percent - lastPercent) * self.progressFactor)
-                        lastPercent = percent
-                        self.progressAction(self.cumulativeProgress, nil)
-                        
-                        print(self.cumulativeProgress)
-                    }
-                    
-                    videoReader.cancelReading()
-                }
-            }
-            
-            group.leave()
-            
-        }
-        
-        group.wait()
-        
-        if lastPresentationTime.isValid, localFrameCount > 0, self.isCancelled == false {
-            self.frameCount = localFrameCount
-            self.timeScaleFactor = self.desiredDuration / CMTimeGetSeconds(lastPresentationTime)
-            
-            print("self.frameCount = \(self.frameCount), estimatedFrameCount = \(estimatedFrameCount)")
-            print("self.timeScaleFactor = \(self.timeScaleFactor), estimatedTimeScaleFactor = \(estimatedTimeScaleFactor)")
-            
-            return true
-        }
-        
-        return false
-    }
-    
     func prepareForReading(completion: @escaping (Bool) -> ()) {
         
         var success = false
         
-        guard let videoAsset = self.videoAsset, self.frameCountAndTimeScale(videoAsset: videoAsset, estimated: self.expedited) else {
+        guard let videoAsset = self.videoAsset else {
             completion(false)
             return
         }
+        
+        self.frameCount = videoAsset.estimatedFrameCount()
+        self.timeScaleFactor = self.desiredDuration / CMTimeGetSeconds(videoAsset.duration)
         
             // Video Reader
         let (_, videoReader, videoReaderOutput) = videoAsset.videoReader(outputSettings: kVideoReaderSettings)

@@ -32,7 +32,6 @@ class ScaleVideoObservable:ObservableObject {
     
     @Published var factor:Double = 1.5 
     @Published var fps:FPS = .thirty
-    @Published var expedited:Bool = false
     
     var errorMesssage:String?
     @Published var player:AVPlayer
@@ -192,7 +191,7 @@ class ScaleVideoObservable:ObservableObject {
             
             let desiredDuration:Float64 = asset.duration.seconds * self.factor
             
-            self.scaleVideo = ScaleVideo(path: self.videoURL.path, desiredDuration: desiredDuration, frameRate: Int32(self.fps.rawValue), expedited: self.expedited, destination: destinationPath, progress: { (value, ciimage) in
+            self.scaleVideo = ScaleVideo(path: self.videoURL.path, desiredDuration: desiredDuration, frameRate: Int32(self.fps.rawValue), destination: destinationPath, progress: { (value, ciimage) in
                 
                 DispatchQueue.main.async {
                     self.progress = value
