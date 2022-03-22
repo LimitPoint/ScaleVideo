@@ -150,10 +150,9 @@ func testScaleVideo() {
 class ScaleVideo {
     
     var videoURL: URL
-    var ciOrientationTransform:CGAffineTransform = CGAffineTransform.identity
+    var ciOrientationTransform:CGAffineTransform
     
-    var videoAsset:AVAsset!
-    var audioAsset:AVAsset?
+    var videoAsset:AVAsset
     
     var frameCount:Int = 0
     
@@ -218,7 +217,7 @@ class ScaleVideo {
         
         videoAsset = AVURLAsset(url: videoURL)
         
-        guard let videoTrack = videoAsset?.tracks(withMediaType: .video).first else {
+        guard let videoTrack = videoAsset.tracks(withMediaType: .video).first else {
             return nil
         }
         
@@ -286,14 +285,13 @@ class ScaleVideo {
     func createAudioWriterInput() {
         
         if let outputSettings = self.audioReaderSettings(),
-           let sampleBuffer = self.videoAsset?.audioSampleBuffer(outputSettings:outputSettings),
-           let sampleCount = self.videoAsset?.audioBufferAndSampleCounts(outputSettings).sampleCount,
+           let sampleBuffer = self.videoAsset.audioSampleBuffer(outputSettings:outputSettings),
            let sampleBufferSourceFormat = CMSampleBufferGetFormatDescription(sampleBuffer),
            let audioStreamBasicDescription = sampleBufferSourceFormat.audioStreamBasicDescription
         {
             outputBufferSize = sampleBuffer.numSamples
             channelCount = Int(audioStreamBasicDescription.mChannelsPerFrame)
-            totalSampleCount = sampleCount
+            totalSampleCount = self.videoAsset.audioBufferAndSampleCounts(outputSettings).sampleCount
             sourceFormat = sampleBufferSourceFormat
             
             let audioOutputSettings = [AVFormatIDKey: kAudioFormatLinearPCM] as [String : Any]
@@ -316,11 +314,6 @@ class ScaleVideo {
         
         var success = false
         
-        guard let videoAsset = self.videoAsset else {
-            completion(false)
-            return
-        }
-        
         self.frameCount = videoAsset.estimatedFrameCount()
         self.timeScaleFactor = self.desiredDuration / CMTimeGetSeconds(videoAsset.duration)
         
@@ -335,10 +328,7 @@ class ScaleVideo {
             self.videoReaderOutput = videoReaderOutput
             
                 // Audio Reader
-            var audioTuple = videoAsset.audioReader(outputSettings: self.audioReaderSettings())
-            if let audioAsset = self.audioAsset {
-                audioTuple = audioAsset.audioReader(outputSettings: self.audioReaderSettings())
-            }
+            let audioTuple = videoAsset.audioReader(outputSettings: self.audioReaderSettings())
             
             if let audioReader = audioTuple.audioReader, let audioReaderOutput = audioTuple.audioReaderOutput, audioReader.canAdd(audioReaderOutput) {
                 
@@ -361,7 +351,7 @@ class ScaleVideo {
     
     func prepareForWriting(completion: @escaping (Bool) -> ()) {
         
-        let transform = videoAsset?.assetTrackTransform()
+        let transform = videoAsset.assetTrackTransform()
         
         self.createVideoWriterInput(width: self.movieSize.width, height: self.movieSize.height, transform: transform)
         
