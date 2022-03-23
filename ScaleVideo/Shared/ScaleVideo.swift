@@ -716,8 +716,10 @@ class ScaleVideo {
         audioWriterInput.requestMediaDataWhenReady(on: serialQueue) {
             while audioWriterInput.isReadyForMoreMediaData, self.writingAudioFinished == false {
                 
-                if self.isCancelled {
-                    audioReader.cancelReading()
+                guard self.isCancelled == false else {
+                    self.audioReader?.cancelReading()
+                    self.finishAudioWriting()
+                    return
                 }
                 
                 if let sampleBuffer = audioReaderOutput.copyNextSampleBuffer() {
