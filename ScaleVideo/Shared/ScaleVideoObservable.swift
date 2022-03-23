@@ -180,9 +180,7 @@ class ScaleVideoObservable:ObservableObject {
         
         let destinationPath = FileManager.documentsURL("\(filename)")!.path 
         let asset = AVAsset(url: self.videoURL)
-        
-        self.progressFrameImage = asset.assetFirstFrame()?.cgimage()
-            
+                    
         DispatchQueue.global(qos: .userInitiated).async {
             
             var lastDate = Date()

@@ -8,19 +8,8 @@
 
 import Foundation
 import AVFoundation
-import CoreServices
 import CoreImage
 import Accelerate
-import simd
-
-let kVideoReaderSettings = [kCVPixelBufferPixelFormatTypeKey as String: NSNumber(value: kCVPixelFormatType_32BGRA as UInt32)]
-
-let kAudioReaderSettings = [
-    AVFormatIDKey: Int(kAudioFormatLinearPCM) as AnyObject,
-    AVLinearPCMBitDepthKey: 16 as AnyObject,
-    AVLinearPCMIsBigEndianKey: false as AnyObject,
-    AVLinearPCMIsFloatKey: false as AnyObject,
-    AVLinearPCMIsNonInterleaved: false as AnyObject]
 
 extension Array {
     func blocks(size: Int) -> [[Element]] {
@@ -147,37 +136,8 @@ func testScaleVideo() {
     scaleVideo?.start()
 }
 
-class ScaleVideo {
-    
-    var videoURL: URL
-    var ciOrientationTransform:CGAffineTransform
-    
-    var videoAsset:AVAsset
-    
-    var frameCount:Int = 0
-    
-    var assetWriter:AVAssetWriter!
-    
-    var movieSize:CGSize
-    
-    var videoWriterInput:AVAssetWriterInput!
-    var audioWriterInput:AVAssetWriterInput?
-    
-    var videoReader: AVAssetReader!
-    var videoReaderOutput:AVAssetReaderTrackOutput!
-    var audioReader: AVAssetReader?
-    var audioReaderOutput:AVAssetReaderTrackOutput?
-    
-    var writingVideoFinished = false
-    var writingAudioFinished = false
-        
-    var generatedMovieURL: URL
-    
-    var progressAction: ((CGFloat, CIImage?) -> Void) = { progress,_ in print("progress = \(progress)")}
-    var completionAction: ((URL?, String?) -> Void) = { url,error in (url == nil ? print("Failed! - \(String(describing: error))") : print("Success!")) }
-    
-    var isCancelled = false
-    
+class ScaleVideo : VideoWriter{
+
         // video scaling
     var desiredDuration:Float64 = 0
     var timeScaleFactor:Float64 = 0
@@ -194,11 +154,10 @@ class ScaleVideo {
     var frameDuration:CMTime
     var currentTime:CMTime = CMTime.zero
     
-    var progressFactor:CGFloat = 1.0 / 2.0 // 2 contributors
+    var progressFactor:CGFloat = 1.0 / 2.0 // 3 contributors
     var cumulativeProgress:CGFloat = 0
     
-    let videoQueue: DispatchQueue = DispatchQueue(label: "com.limit-point.time-scale-video-generator-queue")
-    let audioQueue: DispatchQueue = DispatchQueue(label: "com.limit-point.time-scale-audio-generator-queue")
+    var ciOrientationTransform:CGAffineTransform = CGAffineTransform.identity
 
         // MARK: Init and Start    
     init?(path : String, desiredDuration: Float64, frameRate: Int32, destination: String, progress: @escaping (CGFloat, CIImage?) -> Void, completion: @escaping (URL?, String?) -> Void) {
@@ -207,84 +166,16 @@ class ScaleVideo {
             return nil
         }
         
-        self.videoURL = URL(fileURLWithPath: path)
         self.desiredDuration = desiredDuration
-        
-        generatedMovieURL = URL(fileURLWithPath: destination)
-        
-        self.progressAction = progress
-        self.completionAction = completion
-        
-        videoAsset = AVURLAsset(url: videoURL)
-        
-        guard let videoTrack = videoAsset.tracks(withMediaType: .video).first else {
-            return nil
-        }
-        
-        self.movieSize = CGSize(width: videoTrack.naturalSize.width, height: videoTrack.naturalSize.height)
-        
-        ciOrientationTransform = videoAsset.ciOrientationTransform()
         
         let scale:Int32 = 600
         self.frameDuration = CMTime(value: 1, timescale: CMTimeScale(frameRate)).convertScale(scale, method: CMTimeRoundingMethod.default)
-    }
-    
-    func start() {
         
-        if FileManager.default.fileExists(atPath: generatedMovieURL.path) {
-            try? FileManager.default.removeItem(at: generatedMovieURL)
-        }
+        super.init(path: path, destination: destination, progress: progress, completion: completion)
         
-        self.createAssetWriter()
+        ciOrientationTransform = videoAsset.ciOrientationTransform()
         
-        self.prepareForReading { (success) in
-            
-            if success {
-                self.prepareForWriting { (success) in
-                    
-                    if success {
-                        self.startAssetWriter()
-                        self.writeVideoAndAudio()
-                    }
-                    else {
-                        self.failed()
-                    }
-                }
-            }
-            else {
-                self.failed()
-            }
-        }
-    }
-    
-        // MARK: Prepare Readers and Writers   
-    func videoReaderSettings() -> [String : Any]? {
-        return kVideoReaderSettings
-    }
-    
-    func audioReaderSettings() -> [String : Any]? {
-        return kAudioReaderSettings
-    }
-    
-    func videoWriterSettings(width:CGFloat, height:CGFloat) -> [String : Any]? {
-        return [AVVideoCodecKey : AVVideoCodecType.h264, AVVideoWidthKey : width, AVVideoHeightKey : height]
-    }
-    
-    func createVideoWriterInput(width:CGFloat, height:CGFloat, transform:CGAffineTransform?) {
-        
-        videoWriterInput = AVAssetWriterInput(mediaType: .video, outputSettings: self.videoWriterSettings(width: width, height: height))
-        
-        if let transform = transform {
-            videoWriterInput.transform = transform
-        }
-        
-        videoWriterInput.expectsMediaDataInRealTime = true
-        assetWriter.add(videoWriterInput)
-    }
-    
-    func createAudioWriterInput() {
-        
-        if let outputSettings = self.audioReaderSettings(),
+        if let outputSettings = audioReaderSettings(),
            let sampleBuffer = self.videoAsset.audioSampleBuffer(outputSettings:outputSettings),
            let sampleBufferSourceFormat = CMSampleBufferGetFormatDescription(sampleBuffer),
            let audioStreamBasicDescription = sampleBufferSourceFormat.audioStreamBasicDescription
@@ -293,151 +184,35 @@ class ScaleVideo {
             channelCount = Int(audioStreamBasicDescription.mChannelsPerFrame)
             totalSampleCount = self.videoAsset.audioBufferAndSampleCounts(outputSettings).sampleCount
             sourceFormat = sampleBufferSourceFormat
-            
-            let audioOutputSettings = [AVFormatIDKey: kAudioFormatLinearPCM] as [String : Any]
-            
-            if assetWriter.canApply(outputSettings: audioOutputSettings, forMediaType: AVMediaType.audio) {
-                let audioWriterInput = AVAssetWriterInput(mediaType: AVMediaType.audio, outputSettings:audioOutputSettings, sourceFormatHint: sourceFormat)
-                
-                audioWriterInput.expectsMediaDataInRealTime = false
-                
-                if assetWriter.canAdd(audioWriterInput) {
-                    assetWriter.add(audioWriterInput)
-                    
-                    self.audioWriterInput = audioWriterInput
-                }
-            }
         }
-    }
         
-    func prepareForReading(completion: @escaping (Bool) -> ()) {
-        
-        var success = false
-        
-        self.frameCount = videoAsset.estimatedFrameCount()
         self.timeScaleFactor = self.desiredDuration / CMTimeGetSeconds(videoAsset.duration)
-        
-            // Video Reader
-        let (_, videoReader, videoReaderOutput) = videoAsset.videoReader(outputSettings: kVideoReaderSettings)
-        
-        if let videoReader = videoReader, let videoReaderOutput = videoReaderOutput, videoReader.canAdd(videoReaderOutput) {
-            
-            videoReader.add(videoReaderOutput)
-            
-            self.videoReader = videoReader
-            self.videoReaderOutput = videoReaderOutput
-            
-                // Audio Reader
-            let audioTuple = videoAsset.audioReader(outputSettings: self.audioReaderSettings())
-            
-            if let audioReader = audioTuple.audioReader, let audioReaderOutput = audioTuple.audioReaderOutput, audioReader.canAdd(audioReaderOutput) {
-                
-                guard audioReader.canAdd(audioReaderOutput) else {
-                    completion(false)
-                    return
-                }
-                
-                audioReader.add(audioReaderOutput)
-                
-                self.audioReader = audioReader
-                self.audioReaderOutput = audioReaderOutput
-            }
-            
-            success = true
-        }
-        
-        completion(success)
     }
     
-    func prepareForWriting(completion: @escaping (Bool) -> ()) {
-        
-        let transform = videoAsset.assetTrackTransform()
-        
-        self.createVideoWriterInput(width: self.movieSize.width, height: self.movieSize.height, transform: transform)
-        
-        self.createAudioWriterInput()
-        
-        completion(true)
-        
+    // MARK: Override Reader And Writer Settings
+        // Read uncompressed video buffers for presentation times
+    override func videoReaderSettings() -> [String : Any]? {
+        return [kCVPixelBufferPixelFormatTypeKey as String: NSNumber(value: kCVPixelFormatType_32BGRA as UInt32)]
     }
     
-    func createAssetWriter() {
-        guard let writer = try? AVAssetWriter(outputURL: generatedMovieURL, fileType: AVFileType.mov) else {
-            failed()
-            return
-        }
-        
-        self.assetWriter = writer
+        // Write compressed
+    override func videoWriterSettings() -> [String : Any]? {
+        return [AVVideoCodecKey : AVVideoCodecType.h264, AVVideoWidthKey : movieSize.width, AVVideoHeightKey : movieSize.height]
     }
     
-    func startAssetWriter() {
-        assetWriter.startWriting()
-        assetWriter.startSession(atSourceTime: CMTime.zero)
+        // Read LinearPCM for audio samples 
+    override func audioReaderSettings() -> [String : Any]? {
+        return [
+            AVFormatIDKey: Int(kAudioFormatLinearPCM) as AnyObject,
+            AVLinearPCMBitDepthKey: 16 as AnyObject,
+            AVLinearPCMIsBigEndianKey: false as AnyObject,
+            AVLinearPCMIsFloatKey: false as AnyObject,
+            AVLinearPCMIsNonInterleaved: false as AnyObject]
     }
     
-    func writeVideoAndAudio() {
-        self.writeVideoOnQueue(self.videoQueue)
-        self.writeAudioOnQueue(self.audioQueue)
-    }
-    
-    func completed() {
-        if self.isCancelled {
-            completionAction(nil, "Cancelled")
-        }
-        else {
-            self.completionAction(self.generatedMovieURL, nil)
-        }
-    }
-    
-    func failed() {
-        
-        var errorMessage:String?
-        
-        if let error = assetWriter?.error {
-            print("failed \(error)")
-            print("Error")
-            errorMessage = error.localizedDescription
-        }
-        
-        if self.isCancelled {
-            errorMessage = "Cancelled"
-        }
-        
-        completionAction(nil, errorMessage)
-    }
-    
-    func didCompleteWriting() {
-        guard writingVideoFinished && writingAudioFinished else { return }
-        assetWriter.finishWriting {
-            switch self.assetWriter.status {
-                case .failed:
-                    self.failed()
-                case .completed:
-                    self.completed()
-                default:
-                    self.failed()
-            }
-            
-            return
-        }
-    }
-    
-    func finishVideoWriting() {
-        if writingVideoFinished == false {
-            writingVideoFinished = true
-            videoWriterInput.markAsFinished()
-        }
-        
-        didCompleteWriting()
-    }
-    
-    func finishAudioWriting() {
-        if writingAudioFinished == false {
-            writingAudioFinished = true
-            audioWriterInput?.markAsFinished()
-        }
-        
-        didCompleteWriting()
+        // Write LinearPCM
+    override func audioWriterSettings() -> [String : Any]? {
+        return [AVFormatIDKey: kAudioFormatLinearPCM] as [String : Any]
     }
     
         // MARK: Video Writing
@@ -495,7 +270,8 @@ class ScaleVideo {
         return appended
     }
     
-    func writeVideoOnQueue(_ serialQueue: DispatchQueue) {
+        // MARK: Override writeVideoOnQueue
+    override func writeVideoOnQueue(_ serialQueue: DispatchQueue) {
         
         guard self.videoReader.startReading() else {
             self.finishVideoWriting()
@@ -558,7 +334,7 @@ class ScaleVideo {
         }
     }
 
-        // MARK: Audio Writing    
+        // MARK: Audio Writing
     func extractSamples(_ sampleBuffer:CMSampleBuffer) -> [Int16]? {
         
         if let dataBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) {
@@ -648,7 +424,29 @@ class ScaleVideo {
         return sampleBuffer
     }
     
-    func writeAudioOnQueue(_ serialQueue:DispatchQueue) {
+        // MARK: Override createAudioWriterInput
+    override func createAudioWriterInput() {
+        
+        var outputSettings = audioWriterSettings()
+        if sourceFormat == nil {
+            outputSettings = nil // no audio  
+        }
+        
+        if assetWriter.canApply(outputSettings: outputSettings, forMediaType: AVMediaType.audio) {
+            
+            let audioWriterInput = AVAssetWriterInput(mediaType: AVMediaType.audio, outputSettings:outputSettings, sourceFormatHint: sourceFormat)
+            
+            audioWriterInput.expectsMediaDataInRealTime = false
+            
+            if assetWriter.canAdd(audioWriterInput) {
+                assetWriter.add(audioWriterInput)
+                self.audioWriterInput = audioWriterInput
+            }
+        }
+    }
+    
+        // MARK: Override writeAudioOnQueue
+    override func writeAudioOnQueue(_ serialQueue:DispatchQueue) {
         
         guard let audioReader = self.audioReader, let audioWriterInput = self.audioWriterInput, let audioReaderOutput = self.audioReaderOutput, audioReader.startReading() else {
             self.finishAudioWriting()

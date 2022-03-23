@@ -36,7 +36,7 @@ extension AVAsset {
         return (nil, nil, nil)
     }
     
-    func audioSampleBuffer(outputSettings: [String : Any]? = kAudioReaderSettings) -> CMSampleBuffer? {
+    func audioSampleBuffer(outputSettings: [String : Any]?) -> CMSampleBuffer? {
         
         var buffer:CMSampleBuffer?
         
@@ -116,36 +116,5 @@ extension AVAsset {
         return orientationTransform
     }
     
-    func assetFirstFrame() -> CIImage? {
-        var firstFrameCIImage:CIImage?
-        
-        if let sampleBuffer = self.assetSampleBuffer(), let ciimage = sampleBuffer.ciimage() {
-            firstFrameCIImage = ciimage.transformed(by: ciOrientationTransform())
-        }
-        
-        return firstFrameCIImage
-    }
-    
-    func assetSampleBuffer(outputSettings: [String : Any]? = kVideoReaderSettings) -> CMSampleBuffer? {
-        
-        var buffer:CMSampleBuffer?
-        
-        if let videoTrack = self.tracks(withMediaType: .video).first, let videoReader = try? AVAssetReader(asset: self)  {
-            
-            let videoReaderOutput = AVAssetReaderTrackOutput(track: videoTrack, outputSettings: outputSettings)
-            
-            if videoReader.canAdd(videoReaderOutput) {
-                videoReader.add(videoReaderOutput)
-                
-                if videoReader.startReading() {
-                    buffer = videoReaderOutput.copyNextSampleBuffer()
-                    
-                    videoReader.cancelReading()
-                }
-            }
-        }
-        
-        return buffer
-    }
 }
 
