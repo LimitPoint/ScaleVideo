@@ -194,7 +194,7 @@ class ScaleVideo {
     var frameDuration:CMTime
     var currentTime:CMTime = CMTime.zero
     
-    var progressFactor:CGFloat = 1.0 / 3.0 // 3 contributors
+    var progressFactor:CGFloat = 1.0 / 2.0 // 2 contributors
     var cumulativeProgress:CGFloat = 0
     
     let videoQueue: DispatchQueue = DispatchQueue(label: "com.limit-point.time-scale-video-generator-queue")
