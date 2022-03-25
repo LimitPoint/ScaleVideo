@@ -21,40 +21,6 @@ extension Array {
 
 extension Array where Element == Int16  {
     
-        // Create a control point ramp from `0` to `count-1` (corresponding to an arbitrary array of `count` items)
-    static func control(length:Int, count:Int, smoothly:Bool) -> [Double] {
-        
-        guard length > 0 else {
-            return []
-        }
-        
-        let stride = vDSP_Stride(1)
-        var control:[Double]
-        
-        if smoothly, length > count {
-            let denominator = Double(length - 1) / Double(count - 1)
-            
-            control = (0...length - 1).map {
-                let x = Double($0) / denominator
-                return floor(x) + simd_smoothstep(0, 1, simd_fract(x))
-            }
-        }
-        else {
-            var base: Double = 0
-            var end = Double(count - 1)
-            control = [Double](repeating: 0, count: length)
-            
-            vDSP_vgenD(&base, &end, &control, stride, vDSP_Length(length))
-        }
-        
-            // Ensure last control point is indeed `count-1` with no fractional part, since the calculations above can produce endpoints like `6.9999999999999991` when it should be `7`
-        if control.count > 1 {
-            control[control.count-1] = Double(count - 1)
-        }
-        
-        return control
-    }
-    
     func scaleToD(control:[Double], smoothly:Bool) -> [Element] {
         
         let length = control.count
@@ -119,6 +85,92 @@ extension Array where Element == Int16  {
         }
         
         return channels
+    }
+}
+
+class ControlBlocks {
+    var length:Int // length of controls array
+    var count:Int  // length of array (controls are indexes into this array)
+    var size:Int   // block sizes
+    var smoothly:Bool
+    
+    var currentBlockIndex:Int = 0 // block start index into virtual array of count `length` controls
+    
+    init?(length:Int, count:Int, size:Int, smoothly:Bool) {
+        
+        guard length > 0, count > 0, size > 0 else {
+            return nil
+        }
+        
+        self.length = length
+        self.count = count
+        self.size = size
+        self.smoothly = smoothly
+    }
+    
+    func control(n:Int) -> Double { // n in 0...length-1
+        
+        if length > 1, n == length-1 {
+            return Double(count-1)
+        }
+        
+        if count == 1 || length == 1 {
+            return 0
+        }
+        
+        if smoothly, length > count {
+            let denominator = Double(length - 1) / Double(count - 1)
+            
+            let x = Double(n) / denominator
+            return floor(x) + simd_smoothstep(0, 1, simd_fract(x))
+        }
+        
+        return Double(count - 1) * Double(n) / Double(length-1)
+    }
+    
+    func removeFirst() {
+        currentBlockIndex += size
+    }
+    
+    func first() -> [Double]? {
+        
+        guard currentBlockIndex < length else {
+            return nil
+        }
+        
+        let start = currentBlockIndex
+        let end = Swift.min(currentBlockIndex + size, length)
+        
+        var block = [Double](repeating: 0, count: end-start)
+        
+        for n in start...end-1 {
+            block[n-start] = control(n: n)
+        }
+        
+        return block
+    }
+    
+    func blocks() -> [[Double]] { // for testing
+        var blocks:[[Double]] = []
+        
+        while let block = self.first() {
+            blocks.append(block)
+            self.removeFirst()
+        }
+        
+        return blocks
+    }
+}
+
+class ControlBlocksOffset : ControlBlocks {
+    
+    override func first() -> [Double]? {
+        
+        guard let block = super.first() else {
+            return nil
+        }
+        
+        return vDSP.add(-trunc(block[0]), block)
     }
 }
 
@@ -448,24 +500,16 @@ class ScaleVideo : VideoWriter{
         // MARK: Override writeAudioOnQueue
     override func writeAudioOnQueue(_ serialQueue:DispatchQueue) {
         
+        let length = Int(Double(totalSampleCount) * self.timeScaleFactor)
+        
+        guard let controlBlocks = ControlBlocks(length: length, count: totalSampleCount, size: outputBufferSize, smoothly: true), let controlBlocksOffset = ControlBlocksOffset(length: length, count: totalSampleCount, size: outputBufferSize, smoothly: true) else {
+            self.finishAudioWriting()
+            return
+        }
+        
         guard let audioReader = self.audioReader, let audioWriterInput = self.audioWriterInput, let audioReaderOutput = self.audioReaderOutput, audioReader.startReading() else {
             self.finishAudioWriting()
             return
-        }
-        
-        let length = Int(Double(totalSampleCount) * self.timeScaleFactor)
-        
-        guard length > 0 else {
-            audioReader.cancelReading()
-            self.finishAudioWriting()
-            return
-        }
-        
-        let control = Array.control(length: length, count: totalSampleCount, smoothly: true)
-        
-        var controlBlocks = control.blocks(size: outputBufferSize)
-        var controlBlocksOffset = controlBlocks.map {
-            vDSP.add(-trunc($0[0]), $0)
         }
         
         var arrays_to_scale = [[Int16]](repeating: [], count: channelCount)
@@ -535,7 +579,7 @@ class ScaleVideo : VideoWriter{
                         update_arrays_to_scale()
                         
                         while true {
-                            if let controlBlockOffset = controlBlocksOffset.first,  let indexAdjusted = lastIndexAdjusted(controlBlockOffset), indexAdjusted < arrays_to_scale[0].count {
+                            if let controlBlockOffset = controlBlocksOffset.first(),  let indexAdjusted = lastIndexAdjusted(controlBlockOffset), indexAdjusted < arrays_to_scale[0].count {
                                 
                                 var scaled_channels:[[Int16]] = [] 
                                 for array_to_scale in arrays_to_scale {
@@ -548,7 +592,7 @@ class ScaleVideo : VideoWriter{
                                 
                                 controlBlocksOffset.removeFirst()
                                 
-                                if let controlBlock = controlBlocks.first {
+                                if let controlBlock = controlBlocks.first() {
                                     
                                     let controlBlockIndex = Int(trunc(controlBlock[0]))
                                     
