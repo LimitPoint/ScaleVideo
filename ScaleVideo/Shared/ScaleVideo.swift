@@ -353,7 +353,6 @@ class ScaleVideo : VideoWriter{
                 
                 autoreleasepool { () -> Void in
                     
-                        // check resampling
                     if let sampleBufferPresentationTime = self.sampleBufferPresentationTime {
                         if self.currentTime <= sampleBufferPresentationTime {
                             
@@ -366,19 +365,6 @@ class ScaleVideo : VideoWriter{
                         }
                         else {
                             lastPercent = self.copyNextSampleBufferForResampling(lastPercent: lastPercent)
-                        }
-                    }
-                    else {
-                        
-                        if let sampleBufferPresentationTime = self.sampleBufferPresentationTime {
-                            self.currentTime = sampleBufferPresentationTime
-                        }
-                        
-                        if self.appendNextSampleBufferForResampling() {
-                            lastPercent = self.copyNextSampleBufferForResampling(lastPercent: lastPercent)
-                        }
-                        else {
-                            self.sampleBuffer = nil
                         }
                     }
                 }
