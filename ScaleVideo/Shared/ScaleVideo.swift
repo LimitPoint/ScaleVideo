@@ -11,14 +11,6 @@ import AVFoundation
 import CoreImage
 import Accelerate
 
-extension Array {
-    func blocks(size: Int) -> [[Element]] {
-        return stride(from: 0, to: count, by: size).map {
-            Array(self[$0 ..< Swift.min($0 + size, count)])
-        }
-    }
-}
-
 extension Array where Element == Int16  {
     
     func scaleToD(control:[Double], smoothly:Bool) -> [Element] {
