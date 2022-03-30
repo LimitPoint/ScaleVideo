@@ -9,6 +9,8 @@
 import SwiftUI
 import AVKit
 
+let tangerine = Color(red: 0.98, green: 0.57, blue: 0.21, opacity:0.9)
+
 struct AlertInfo: Identifiable {
     
     enum AlertType {

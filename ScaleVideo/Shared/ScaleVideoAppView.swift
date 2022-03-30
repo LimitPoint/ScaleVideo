@@ -8,8 +8,6 @@
 
 import SwiftUI
 
-let tangerine = Color(red: 1.0, green: 0.7, blue: 0.1, opacity:0.9)
-
 struct ScaleVideoAppView: View {
     
     @ObservedObject var scaleVideoObservable:ScaleVideoObservable 
