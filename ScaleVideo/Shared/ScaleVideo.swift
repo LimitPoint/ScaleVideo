@@ -13,7 +13,7 @@ import Accelerate
 
 extension Array where Element == Int16  {
     
-    func scaleToD(control:[Double], smoothly:Bool) -> [Element] {
+    func scaleToD(control:[Double]) -> [Element] {
         
         let length = control.count
         
@@ -561,7 +561,7 @@ class ScaleVideo : VideoWriter{
                                 
                                 var scaled_channels:[[Int16]] = [] 
                                 for array_to_scale in arrays_to_scale {
-                                    scaled_channels.append(array_to_scale.scaleToD(control: controlBlockOffset, smoothly: true))
+                                    scaled_channels.append(array_to_scale.scaleToD(control: controlBlockOffset))
                                 }
                                 
                                 if let scaled_channels_interleaved = self.interleave_arrays(scaled_channels) {
