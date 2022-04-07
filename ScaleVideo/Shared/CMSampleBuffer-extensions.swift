@@ -23,14 +23,14 @@ extension CMSampleBuffer {
         return ciImage
     }
     
-    func setTimeStamp(time: CMTime, duration:CMTime) -> CMSampleBuffer? {
+    func setTimeStamp(time: CMTime) -> CMSampleBuffer? {
         var count: CMItemCount = 0
         
         guard CMSampleBufferGetSampleTimingInfoArray(self, entryCount: 0, arrayToFill: nil, entriesNeededOut: &count) == noErr, count == 1 else {
             return nil
         }
         
-        let timingInfoArray = [CMSampleTimingInfo(duration: duration, presentationTimeStamp: time, decodeTimeStamp: CMTime.invalid)]
+        let timingInfoArray = [CMSampleTimingInfo(duration: CMTime.invalid, presentationTimeStamp: time, decodeTimeStamp: CMTime.invalid)]
         
         var sampleBuffer: CMSampleBuffer?
         guard CMSampleBufferCreateCopyWithNewTiming(allocator: nil, sampleBuffer: self, sampleTimingEntryCount: count, sampleTimingArray: timingInfoArray, sampleBufferOut: &sampleBuffer) == noErr else {
