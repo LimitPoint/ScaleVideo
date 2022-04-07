@@ -265,7 +265,7 @@ class ScaleVideo : VideoWriter{
         self.sampleBuffer = nil
         
         guard let sampleBuffer = self.videoReaderOutput?.copyNextSampleBuffer() else {
-            return 0
+            return lastPercent
         }
         
         self.sampleBuffer = sampleBuffer
