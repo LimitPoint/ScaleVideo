@@ -234,7 +234,7 @@ class ScaleVideo : VideoWriter{
     }
     
     // MARK: Override Reader And Writer Settings
-        // Read uncompressed video buffers for presentation times
+        // Read uncompressed video buffers to modify presentation times
     override func videoReaderSettings() -> [String : Any]? {
         return [kCVPixelBufferPixelFormatTypeKey as String: NSNumber(value: kCVPixelFormatType_32BGRA as UInt32)]
     }
