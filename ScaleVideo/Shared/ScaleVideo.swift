@@ -194,7 +194,7 @@ class ScaleVideo : VideoWriter{
     
     var currentIndex:Int = 0
     var sampleBuffer:CMSampleBuffer?
-    var sampleBufferPresentationTime:CMTime?
+    var sampleBufferPresentationTime = CMTime.zero
     var frameDuration:CMTime
     var currentTime:CMTime = CMTime.zero
     
@@ -301,7 +301,7 @@ class ScaleVideo : VideoWriter{
         
         if let sampleBuffer = self.sampleBuffer {
             
-            if let sampleBufferPresentationTime = self.sampleBufferPresentationTime, self.currentTime != sampleBufferPresentationTime {
+            if self.currentTime != sampleBufferPresentationTime {
                 if let adjustedSampleBuffer = sampleBuffer.setTimeStamp(time: self.currentTime, duration: self.frameDuration) {
                     appended = self.videoWriterInput.append(adjustedSampleBuffer)
                 }
@@ -345,19 +345,17 @@ class ScaleVideo : VideoWriter{
                 
                 autoreleasepool { () -> Void in
                     
-                    if let sampleBufferPresentationTime = self.sampleBufferPresentationTime {
-                        if self.currentTime <= sampleBufferPresentationTime {
-                            
-                            if self.appendNextSampleBufferForResampling() {
-                                self.currentTime = CMTimeAdd(self.currentTime, self.frameDuration)
-                            }
-                            else {
-                                self.sampleBuffer = nil
-                            }
+                    if self.currentTime <= self.sampleBufferPresentationTime {
+                        
+                        if self.appendNextSampleBufferForResampling() {
+                            self.currentTime = CMTimeAdd(self.currentTime, self.frameDuration)
                         }
                         else {
-                            lastPercent = self.copyNextSampleBufferForResampling(lastPercent: lastPercent)
+                            self.sampleBuffer = nil
                         }
+                    }
+                    else {
+                        lastPercent = self.copyNextSampleBufferForResampling(lastPercent: lastPercent)
                     }
                 }
             }
