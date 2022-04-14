@@ -180,9 +180,8 @@ func testScaleVideo() {
     scaleVideo?.start()
 }
 
-class ScaleVideo : VideoWriter{
+class ScaleVideo : VideoWriter {
 
-        // video scaling
     var desiredDuration:Float64 = 0
     var timeScaleFactor:Float64 = 0
     
@@ -192,6 +191,7 @@ class ScaleVideo : VideoWriter{
     var totalSampleCount:Int = 0
     var sourceFormat:CMFormatDescription?
     
+        // video scaling
     var currentIndex:Int = 0
     var sampleBuffer:CMSampleBuffer?
     var sampleBufferPresentationTime = CMTime.zero
