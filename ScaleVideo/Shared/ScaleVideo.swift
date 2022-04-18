@@ -142,10 +142,6 @@ class ControlBlocks {
         return block
     }
     
-    func offset(block:[Double]) -> [Double]? {
-        return vDSP.add(-trunc(block[0]), block)
-    }
-    
     func blocks() -> [[Double]] { // for testing
         var blocks:[[Double]] = []
         
@@ -155,6 +151,18 @@ class ControlBlocks {
         }
         
         return blocks
+    }
+}
+
+class ControlBlocksOffset : ControlBlocks {
+    
+    override func first() -> [Double]? {
+        
+        guard let block = super.first() else {
+            return nil
+        }
+        
+        return vDSP.add(-trunc(block[0]), block)
     }
 }
 
@@ -492,7 +500,7 @@ class ScaleVideo : VideoWriter {
         
         let length = Int(Double(totalSampleCount) * self.timeScaleFactor)
         
-        guard let controlBlocks = ControlBlocks(length: length, count: totalSampleCount, size: outputBufferSize, smoothly: true) else {
+        guard let controlBlocks = ControlBlocks(length: length, count: totalSampleCount, size: outputBufferSize, smoothly: true), let controlBlocksOffset = ControlBlocksOffset(length: length, count: totalSampleCount, size: outputBufferSize, smoothly: true) else {
             self.finishAudioWriting()
             return
         }
@@ -569,7 +577,7 @@ class ScaleVideo : VideoWriter {
                         update_arrays_to_scale()
                         
                         while true {
-                            if let controlBlock = controlBlocks.first(), let controlBlockOffset = controlBlocks.offset(block: controlBlock), let indexAdjusted = lastIndexAdjusted(controlBlockOffset), indexAdjusted < arrays_to_scale[0].count {
+                            if let controlBlockOffset = controlBlocksOffset.first(),  let indexAdjusted = lastIndexAdjusted(controlBlockOffset), indexAdjusted < arrays_to_scale[0].count {
                                 
                                 var scaled_channels:[[Int16]] = [] 
                                 for array_to_scale in arrays_to_scale {
@@ -580,13 +588,18 @@ class ScaleVideo : VideoWriter {
                                     scaled_array.append(contentsOf: scaled_channels_interleaved)
                                 }
                                 
-                                let controlBlockIndex = Int(trunc(controlBlock[0]))
+                                controlBlocksOffset.removeFirst()
                                 
-                                nbrItemsToRemove = nbrItemsToRemove + (controlBlockIndex - nbrItemsRemoved)
-                                
-                                update_arrays_to_scale()
-                                
-                                controlBlocks.removeFirst()
+                                if let controlBlock = controlBlocks.first() {
+                                    
+                                    let controlBlockIndex = Int(trunc(controlBlock[0]))
+                                    
+                                    nbrItemsToRemove = nbrItemsToRemove + (controlBlockIndex - nbrItemsRemoved)
+                                    
+                                    update_arrays_to_scale()
+                                    
+                                    controlBlocks.removeFirst()
+                                }
                             }
                             else {
                                 break
