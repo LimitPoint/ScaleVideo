@@ -56,9 +56,9 @@ Arguments:
 
 4. **destination: String** - The path of the scaled video file.
 
-5. **progress** - A handler that is periodically executed to send progress images and values.
+5. **progress: Closure** - A handler that is periodically executed to send progress images and values.
 
-6. **completion** - A handler that is executed when the operation has completed to send a message of success or not.
+6. **completion: Closure** - A handler that is executed when the operation has completed to send a message of success or not.
 
 Example usage is provided in the code: 
 
