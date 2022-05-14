@@ -18,7 +18,7 @@ struct HeaderView: View {
             Text("Files generated into Documents folder")
                 .fontWeight(.bold)
                 .padding(2)
-            Text("This app scales video and audio time.")
+            Text("Uniformly scale video and audio time.")
             
             Button("Go to Documents", action: { 
                 NSWorkspace.shared.open(scaleVideoObservable.documentsURL)

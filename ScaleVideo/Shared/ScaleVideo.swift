@@ -154,18 +154,6 @@ class ControlBlocks {
     }
 }
 
-class ControlBlocksOffset : ControlBlocks {
-    
-    override func first() -> [Double]? {
-        
-        guard let block = super.first() else {
-            return nil
-        }
-        
-        return vDSP.add(-trunc(block[0]), block)
-    }
-}
-
 func testScaleVideo() {
     let fm = FileManager.default
     let docsurl = try! fm.url(for:.documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
@@ -500,7 +488,7 @@ class ScaleVideo : VideoWriter {
         
         let length = Int(Double(totalSampleCount) * self.timeScaleFactor)
         
-        guard let controlBlocks = ControlBlocks(length: length, count: totalSampleCount, size: outputBufferSize, smoothly: true), let controlBlocksOffset = ControlBlocksOffset(length: length, count: totalSampleCount, size: outputBufferSize, smoothly: true) else {
+        guard let controlBlocks = ControlBlocks(length: length, count: totalSampleCount, size: outputBufferSize, smoothly: true) else {
             self.finishAudioWriting()
             return
         }
@@ -516,6 +504,7 @@ class ScaleVideo : VideoWriter {
         var nbrItemsRemoved:Int = 0
         var nbrItemsToRemove:Int = 0
         
+        var block = controlBlocks.first()
         controlBlocks.removeFirst()
         
         func update_arrays_to_scale() {
@@ -550,6 +539,13 @@ class ScaleVideo : VideoWriter {
             return lastIndex
         }
         
+        func offsetBlock(_ block:[Double]?) -> [Double]? {
+            if let block = block {
+                return vDSP.add(-trunc(block[0]), block)
+            }
+            return nil
+        }
+        
         var lastPercent:CGFloat = 0
         var bufferSamplesCount:Int = 0
         
@@ -577,7 +573,7 @@ class ScaleVideo : VideoWriter {
                         update_arrays_to_scale()
                         
                         while true {
-                            if let controlBlockOffset = controlBlocksOffset.first(),  let indexAdjusted = lastIndexAdjusted(controlBlockOffset), indexAdjusted < arrays_to_scale[0].count {
+                            if let controlBlockOffset = offsetBlock(block),  let indexAdjusted = lastIndexAdjusted(controlBlockOffset), indexAdjusted < arrays_to_scale[0].count {
                                 
                                 var scaled_channels:[[Int16]] = [] 
                                 for array_to_scale in arrays_to_scale {
@@ -588,9 +584,9 @@ class ScaleVideo : VideoWriter {
                                     scaled_array.append(contentsOf: scaled_channels_interleaved)
                                 }
                                 
-                                controlBlocksOffset.removeFirst()
+                                block = controlBlocks.first()
                                 
-                                if let controlBlock = controlBlocks.first() {
+                                if let controlBlock = block {
                                     
                                     let controlBlockIndex = Int(trunc(controlBlock[0]))
                                     
