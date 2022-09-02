@@ -8,8 +8,21 @@
 
 import Foundation
 import AVFoundation
-import CoreImage
 import Accelerate
+
+func testScaleVideo() {
+    let fm = FileManager.default
+    let docsurl = try! fm.url(for:.documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+    
+    let destinationPath = docsurl.appendingPathComponent("DefaultVideoScaled.mov").path
+    let scaleVideo = ScaleVideo(path: kDefaultURL.path, desiredDuration: 8, frameRate: 30, destination: destinationPath) { p, _ in
+        print("p = \(p)")
+    } completion: { result, error in
+        print("result = \(String(describing: result))")
+    }
+    
+    scaleVideo?.start()
+}
 
 extension Array where Element == Int16  {
     
@@ -152,20 +165,6 @@ class ControlBlocks {
         
         return blocks
     }
-}
-
-func testScaleVideo() {
-    let fm = FileManager.default
-    let docsurl = try! fm.url(for:.documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-    
-    let destinationPath = docsurl.appendingPathComponent("DefaultVideoScaled.mov").path
-    let scaleVideo = ScaleVideo(path: kDefaultURL.path, desiredDuration: 8, frameRate: 30, destination: destinationPath) { p, _ in
-        print("p = \(p)")
-    } completion: { result, error in
-        print("result = \(String(describing: result))")
-    }
-    
-    scaleVideo?.start()
 }
 
 class ScaleVideo : VideoWriter {
