@@ -2,6 +2,9 @@
 //  HeaderView.swift
 //  ScaleAudio
 //
+//  Read discussion at:
+//  http://www.limit-point.com/blog/2022/scale-video/
+//
 //  Created by Joseph Pagliaro on 2/11/22.
 //  Copyright © 2022 Limit Point LLC. All rights reserved.
 //
