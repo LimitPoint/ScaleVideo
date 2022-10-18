@@ -10,6 +10,7 @@
 //
 
 import Foundation
+import CoreImage
 import AVFoundation
 import Accelerate
 
