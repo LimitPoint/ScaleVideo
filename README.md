@@ -1,4 +1,4 @@
-![ScaleVideo](http://www.limit-point.com/assets/images/ScaleVideo.jpg)
+![ScaleVideo](https://www.limit-point.com/assets/images/ScaleVideo.jpg)
 # ScaleVideo.swift
 ## Uniformly scales video in time domain
 
