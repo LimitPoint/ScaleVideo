@@ -45,8 +45,13 @@ struct PickVideoView: View {
             })
             
             VideoPlayer(player: scaleVideoObservable.player)
+                .frame(maxWidth: .infinity) // Allow the video to take up the full available width
+                .aspectRatio(16/9, contentMode: .fit)
             
-            Text(scaleVideoObservable.videoURL.lastPathComponent)
+            if let urlAsset = scaleVideoObservable.playerItem.asset as? AVURLAsset {
+                let url = urlAsset.url
+                Text(url.lastPathComponent)
+            }
             
             HStack {
                 Button(action: { scaleVideoObservable.playOriginal() }, label: {
