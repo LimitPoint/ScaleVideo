@@ -37,9 +37,11 @@ class ScaleVideoObservable:ObservableObject {
     @Published var fps:FPS = .thirty
     
     var errorMesssage:String?
-    @Published var player:AVPlayer
+    var player:AVPlayer
+    @Published var playerItem:AVPlayerItem
     
     init() {
+        playerItem = AVPlayerItem(url: videoURL)
         player = AVPlayer(url: videoURL)
         
         documentsURL = try! FileManager.default.url(for:.documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
@@ -148,8 +150,8 @@ class ScaleVideoObservable:ObservableObject {
             DispatchQueue.main.async {
                 if let copiedURL = copiedURL {
                     self.videoURL = copiedURL
-                    
-                    self.player = AVPlayer(url: copiedURL)
+                    self.playerItem = AVPlayerItem(url: copiedURL)
+                    self.player.replaceCurrentItem(with: self.playerItem)
                     completion(true)
                 }
                 else {
@@ -161,7 +163,8 @@ class ScaleVideoObservable:ObservableObject {
     
     func play(_ url:URL) {
         self.player.pause()
-        self.player = AVPlayer(url: url)
+        self.playerItem = AVPlayerItem(url: url)
+        self.player.replaceCurrentItem(with: self.playerItem)
         self.player.play()
     }
     
