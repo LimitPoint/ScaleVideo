@@ -227,27 +227,11 @@ class ScaleVideo : VideoWriter {
     // MARK: Override Reader And Writer Settings
         // Read uncompressed video buffers to modify presentation times
     
-        // For HDR input specify SDR color properties in the videoReaderSettings
-    func isHDR() -> Bool {
-        let hdrTracks = videoAsset.tracks(withMediaCharacteristic: .containsHDRVideo) 
-        return hdrTracks.count > 0
-    }
-    
     override func videoReaderSettings() -> [String : Any]? {
         
         var settings:[String : Any]?
         
         settings = [kCVPixelBufferPixelFormatTypeKey as String: NSNumber(value: kCVPixelFormatType_32BGRA as UInt32)]
-        
-        if isHDR() {
-            settings?[AVVideoColorPropertiesKey]
-            = [AVVideoColorPrimariesKey:
-                AVVideoColorPrimaries_ITU_R_709_2,
-             AVVideoTransferFunctionKey:
-                AVVideoTransferFunction_ITU_R_709_2,
-                  AVVideoYCbCrMatrixKey:
-                AVVideoYCbCrMatrix_ITU_R_709_2]
-        }
         
         return settings
     }
