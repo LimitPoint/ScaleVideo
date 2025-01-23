@@ -15,6 +15,8 @@ struct ScaleProgressView: View {
     
     @ObservedObject var scaleVideoObservable: ScaleVideoObservable
     
+    @State private var scale: CGFloat = 1.0
+    
     var body: some View {
         VStack {
             if let cgimage = scaleVideoObservable.progressFrameImage
@@ -24,10 +26,19 @@ struct ScaleProgressView: View {
                     .scaledToFit()
             }
             else {
-                Image(systemName: "photo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 100, height: 100, alignment: .center)
+                Text("Processing…")
+                    .font(.title)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.blue)
+                    .scaleEffect(scale) // Adjusts the size
+                    .animation(
+                        Animation.easeInOut(duration: 0.8) // Smooth throbbing effect
+                            .repeatForever(autoreverses: true),
+                        value: scale
+                    )
+                    .onAppear {
+                        scale = 1.2 // Start the throbbing by increasing the scale slightly
+                    }
             }
             
             ProgressView(scaleVideoObservable.progressTitle, value: min(scaleVideoObservable.progress,1), total: 1)

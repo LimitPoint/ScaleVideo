@@ -46,16 +46,6 @@ class ScaleVideoObservable:ObservableObject {
         
         documentsURL = try! FileManager.default.url(for:.documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
         print("path = \(documentsURL.path)")
-
-        #if os(iOS)        
-        if let uiimage = UIImage(named: "ScaleVideo.png") {
-            progressFrameImage = uiimage.cgImage
-        }
-        #else
-        if let nsimage = NSImage(named: "ScaleVideo.png") {
-            progressFrameImage = nsimage.cgImage(forProposedRect:nil, context: nil, hints: nil)
-        }
-        #endif
     }
     
     func tryDownloadingUbiquitousItem(_ url: URL, completion: @escaping (URL?) -> ()) {
@@ -177,6 +167,8 @@ class ScaleVideoObservable:ObservableObject {
     }
     
     func scale() {
+        
+        progressFrameImage = nil
         
         self.player.pause()
         
